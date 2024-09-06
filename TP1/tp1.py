@@ -55,7 +55,7 @@ def procesarLuminanciaSaturacion(imagen, a, b):
     i = yiq[:,:,1]
     q = yiq[:,:,2]
     
-    y1 = np.clip(a*y,None,1)
+    y1 = np.clip(a*y,0,1)
     i2 = np.clip(b*i,-0.5957,0.5957)
     q2 = np.clip(b*q,-0.5226,0.5226)
 
