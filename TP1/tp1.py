@@ -6,6 +6,7 @@ import tkinter
 from tkinter import filedialog, StringVar, OptionMenu, simpledialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.gridspec import GridSpec
 import imageio.v2 as imageio
 import numpy as np
 
@@ -43,36 +44,73 @@ def procesarCanalAzul(imagen):
     ax.axis('off')
     return fig
 
+def procesarCanalesRGB(imagen):
+    fig, axs = plt.subplots(1, 3, figsize=(12, 4))
+    axs[0].imshow(imagen[:, :, 0], cmap='Reds')
+    axs[0].set_title("Canal Rojo")
+    axs[0].axis('off')
+
+    axs[1].imshow(imagen[:, :, 1], cmap='Greens')
+    axs[1].set_title("Canal Verde")
+    axs[1].axis('off')
+
+    axs[2].imshow(imagen[:, :, 2], cmap='Blues')
+    axs[2].set_title("Canal Azul")
+    axs[2].axis('off')
+
+    return fig
+
 def procesarLuminanciaSaturacion(imagen, a, b):
-    fig, ax = plt.subplots(figsize=(4, 2))
+    fig = plt.figure(figsize=(6, 4))  # Tamaño de la figura más grande
+
+    # Crear un GridSpec con más espacio para la imagen procesada
+    gs = GridSpec(3, 4, figure=fig)
     
+    # Convertir la imagen a YIQ
     yiq = np.zeros(imagen.shape)
-    yiq[:,:,0] = np.clip(0.299 * imagen[:,:,0] + 0.587 * imagen[:,:,1] + 0.114 * imagen[:,:,2],0,1)
-    yiq[:,:,1] = np.clip(0.59 * imagen[:,:,0] + -0.27 * imagen[:,:,1] + -0.32 * imagen[:,:,2],-0.5957,0.5957)
-    yiq[:,:,2] = np.clip(0.21 * imagen[:,:,0] + -0.52 * imagen[:,:,1] + 0.31 * imagen[:,:,2],-0.5226,0.5226)
+    yiq[:,:,0] = np.clip(0.299 * imagen[:,:,0] + 0.587 * imagen[:,:,1] + 0.114 * imagen[:,:,2], 0, 1)
+    yiq[:,:,1] = np.clip(0.59 * imagen[:,:,0] + -0.27 * imagen[:,:,1] + -0.32 * imagen[:,:,2], -0.5957, 0.5957)
+    yiq[:,:,2] = np.clip(0.21 * imagen[:,:,0] + -0.52 * imagen[:,:,1] + 0.31 * imagen[:,:,2], -0.5226, 0.5226)
     
-    y = yiq[:,:,0]
-    i = yiq[:,:,1]
-    q = yiq[:,:,2]
-    
-    y1 = np.clip(a*y,0,1)
-    i2 = np.clip(b*i,-0.5957,0.5957)
-    q2 = np.clip(b*q,-0.5226,0.5226)
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax1.imshow(yiq)
+    ax1.set_title("YIQ")
+    ax1.axis('off')
 
-    yiq1 = np.zeros(yiq.shape)
-    yiq1[:,:,0] = y1
-    yiq1[:,:,1] = i2
-    yiq1[:,:,2] = q2    
-    
-    r1g1b1 = np.zeros(yiq1.shape)
+    # Mostrar los canales YIQ originales
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax2.imshow(yiq[:, :, 0], cmap='gray')
+    ax2.set_title("Canal Y")
+    ax2.axis('off')
 
-    r1g1b1[:,:,0] = np.clip(1 * yiq1[:,:,0] +  0.9663 * yiq1[:,:,1] + 0.6210 * yiq1[:,:,2],0,1)
-    r1g1b1[:,:,1] = np.clip(1 * yiq1[:,:,0] + -0.2721 * yiq1[:,:,1] + -0.6474 * yiq1[:,:,2],0,1)
-    r1g1b1[:,:,2] = np.clip(1 * yiq1[:,:,0] + -1.1070 * yiq1[:,:,1] + 1.7046 * yiq1[:,:,2],0,1)
+    ax3 = fig.add_subplot(gs[0, 2])
+    ax3.imshow(yiq[:, :, 1], cmap='gray')
+    ax3.set_title("Canal I")
+    ax3.axis('off')
 
-    ax.imshow(r1g1b1)
-    ax.set_title(f"Luminancia a={a}, Saturacion b={b}")
-    ax.axis('off')
+    ax4 = fig.add_subplot(gs[0, 3])
+    ax4.imshow(yiq[:, :, 2], cmap='gray')
+    ax4.set_title("Canal Q")
+    ax4.axis('off')
+
+    # Aplicar los parámetros de luminancia y saturación
+    y1 = np.clip(a * yiq[:,:,0], 0, 1)
+    i2 = np.clip(b * yiq[:,:,1], -0.5957, 0.5957)
+    q2 = np.clip(b * yiq[:,:,2], -0.5226, 0.5226)
+
+    # Convertir de vuelta a RGB
+    r1g1b1 = np.zeros(yiq.shape)
+    r1g1b1[:,:,0] = np.clip(1 * y1 +  0.9663 * i2 + 0.6210 * q2, 0, 1)
+    r1g1b1[:,:,1] = np.clip(1 * y1 + -0.2721 * i2 + -0.6474 * q2, 0, 1)
+    r1g1b1[:,:,2] = np.clip(1 * y1 + -1.1070 * i2 + 1.7046 * q2, 0, 1)
+
+    # Mostrar la imagen procesada en el centro y más grande
+    ax5 = fig.add_subplot(gs[1:, 1:3])  # Esta subtrama ocupa dos filas y dos columnas
+    ax5.imshow(r1g1b1)
+    ax5.set_title(f"Imagen Procesada (a={a}, b={b})")
+    ax5.axis('off')
+
+    plt.tight_layout()
     return fig
 
 def importarImagen():
@@ -133,6 +171,8 @@ def procesarImagen():
                 fig = procesarLuminanciaSaturacion(imagen, a, b)
             else:
                 etiqueta["text"] = "Operación cancelada."
+        elif tipoProcesamiento.get() == "Canales RGB":
+            fig = procesarCanalesRGB(imagen)
 
         # Destruir canvas anterior si existe
         if canvasProcesado:
@@ -144,6 +184,7 @@ def procesarImagen():
         
     else:
         etiqueta["text"] = "Primero debes cargar una imagen!"
+
 
 # Tkinter
 ventana = tkinter.Tk()
@@ -176,7 +217,7 @@ etiqueta.grid(row=1, columnspan=3, pady=3)
 
 # Crear un menú desplegable para seleccionar el tipo de procesamiento
 tipoProcesamiento = StringVar(value="Blanco y Negro")
-opcionesProcesamiento = ["Blanco y Negro", "Canal Rojo", "Canal Verde", "Canal Azul", "Luminancia y Saturacion"]
+opcionesProcesamiento = ["Blanco y Negro", "Canal Rojo", "Canal Verde", "Canal Azul", "Luminancia y Saturacion", "Canales RGB"]
 menuProcesamiento = OptionMenu(frameControles, tipoProcesamiento, *opcionesProcesamiento)
 menuProcesamiento.grid(row=0, column=1, padx=10)
 
