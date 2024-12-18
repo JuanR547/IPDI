@@ -81,11 +81,11 @@ def run_detection(selected_color_label):
             break
 
         # Realizar la inferencia con el primer modelo (remeras)
-        results1 = model1.infer(frame)[0]
+        results1 = model1.infer(frame, confidence = 0.6)[0]
         detections1 = sv.Detections.from_inference(results1)
 
         # Realizar la inferencia con el segundo modelo (pantalones cortos)
-        results2 = model2.infer(frame)[0]
+        results2 = model2.infer(frame, confidence = 0.8)[0]
         detections2 = sv.Detections.from_inference(results2)
 
         # Anotar el fotograma con las detecciones del primer modelo (remeras)
@@ -108,7 +108,7 @@ def run_detection(selected_color_label):
             # Verificar si la etiqueta de la remera coincide con la seleccionada
             if label_normalized == selected_color_label_normalized:
                 if len(detections2) > 0:
-                    alert_text = f"¡ALERTA: {selected_color_label} y pantalón corto detectados!"
+                    alert_text = f"ALERTA: {selected_color_label} y pantalón corto detectados"
                     print(alert_text)  # Mostrar en consola
                     # Superponer texto en el cuadro de video
                     cv2.putText(annotated_frame, alert_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
